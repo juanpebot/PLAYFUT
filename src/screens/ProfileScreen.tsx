@@ -1,11 +1,16 @@
 import { useState } from 'react';
-import { Settings, Bell, Shield, LogOut, Star, Award, Target, ChevronRight, Share2 } from 'lucide-react';
+import { Settings, Bell, Shield, LogOut, ChevronRight, Share2 } from 'lucide-react';
+import { UserData } from '../components/RegisterScreen';
+
+interface Props {
+  userData?: UserData | null;
+}
 
 const achievements = [
   { id: 1, title: 'Primer Gol', desc: 'Marca tu primer gol', unlocked: true, icon: '⚽' },
-  { id: 2, title: 'Hat-Trick', desc: '3 goles en un partido', unlocked: true, icon: '🎯' },
-  { id: 3, title: 'MVP', desc: 'Mejor jugador del partido', unlocked: true, icon: '⭐' },
-  { id: 4, title: 'Victorioso', desc: '10 victorias', unlocked: true, icon: '🏆' },
+  { id: 2, title: 'Hat-Trick', desc: '3 goles en un partido', unlocked: false, icon: '🎯' },
+  { id: 3, title: 'MVP', desc: 'Mejor jugador del partido', unlocked: false, icon: '⭐' },
+  { id: 4, title: 'Victorioso', desc: '10 victorias', unlocked: false, icon: '🏆' },
   { id: 5, title: 'Leyenda', desc: '100 partidos jugados', unlocked: false, icon: '👑' },
   { id: 6, title: 'Asistente', desc: '50 asistencias', unlocked: false, icon: '🎯' },
 ];
@@ -16,29 +21,31 @@ const menuItems = [
   { id: 'settings', icon: Settings, label: 'Configuracion', desc: 'Preferencias de la app' },
 ];
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ userData }: Props) {
   const [notifications, setNotifications] = useState(true);
 
-  const userData = {
-    name: 'Carlos Romero',
-    email: 'carlos@example.com',
-    avatar: 'CR',
-    rating: 88,
-    level: 'ORO',
-    memberSince: 'Enero 2024',
+  const profileData = {
+    name: userData?.username || 'Jugador',
+    email: userData?.email || 'jugador@email.com',
+    avatar: userData?.username ? userData.username.slice(0, 2).toUpperCase() : '??',
+    position: userData?.position || 'MED',
+    city: userData?.city || 'Madrid',
+    rating: 75,
+    level: 'BRONCE',
+    memberSince: 'Mayo 2026',
     stats: {
-      matches: 84,
-      wins: 62,
-      goals: 47,
-      mvp: 18,
+      matches: 0,
+      wins: 0,
+      goals: 0,
+      mvp: 0,
     },
     cardStats: [
-      { label: 'VEL', value: 89 },
-      { label: 'TIR', value: 91 },
-      { label: 'PAS', value: 78 },
-      { label: 'REG', value: 85 },
-      { label: 'FIS', value: 82 },
-      { label: 'DEF', value: 45 },
+      { label: 'VEL', value: 75 },
+      { label: 'TIR', value: 72 },
+      { label: 'PAS', value: 70 },
+      { label: 'REG', value: 68 },
+      { label: 'FIS', value: 71 },
+      { label: 'DEF', value: 65 },
     ],
   };
 
@@ -47,17 +54,18 @@ export default function ProfileScreen() {
       {/* Header */}
       <header className="px-6 pt-8 pb-6 border-b border-white/10 bg-gradient-to-b from-zinc-900 to-zinc-950">
         <div className="flex items-center gap-4">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-green-400 to-emerald-700 flex items-center justify-center text-3xl font-black text-black border-2 border-green-300 shadow-lg shadow-green-500/30">
-            {userData.avatar}
+          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-emerald-400 to-green-700 flex items-center justify-center text-3xl font-black text-black border-2 border-emerald-300 shadow-lg shadow-emerald-500/30">
+            {profileData.avatar}
           </div>
           <div className="flex-1">
-            <h1 className="text-xl font-black text-white">{userData.name}</h1>
-            <p className="text-xs text-zinc-500 mt-0.5">{userData.email}</p>
+            <h1 className="text-xl font-black text-white">{profileData.name}</h1>
+            <p className="text-xs text-zinc-500 mt-0.5">{profileData.email}</p>
             <div className="flex items-center gap-2 mt-2">
-              <span className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-black text-[10px] font-black px-2 py-0.5 rounded-md">
-                {userData.level}
+              <span className="bg-gradient-to-r from-amber-600 to-amber-700 text-black text-[10px] font-black px-2 py-0.5 rounded-md">
+                {profileData.level}
               </span>
-              <span className="text-zinc-500 text-xs">{userData.rating} OVR</span>
+              <span className="text-zinc-500 text-xs">{profileData.rating} OVR</span>
+              <span className="text-emerald-400 text-xs font-bold">{profileData.position}</span>
             </div>
           </div>
         </div>
@@ -65,13 +73,13 @@ export default function ProfileScreen() {
 
       {/* Mini Card */}
       <div className="px-5 py-4">
-        <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-yellow-400 via-yellow-500 to-yellow-700 p-4 flex items-center gap-4 animate-slideUp">
+        <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-amber-600 via-amber-700 to-amber-900 p-4 flex items-center gap-4 animate-slideUp">
           <div className="text-center">
-            <div className="text-4xl font-black text-black">{userData.rating}</div>
+            <div className="text-4xl font-black text-black">{profileData.rating}</div>
             <div className="text-[10px] font-bold text-black/70">OVR</div>
           </div>
           <div className="flex-1 grid grid-cols-3 gap-3">
-            {userData.cardStats.slice(0, 6).map((stat) => (
+            {profileData.cardStats.slice(0, 6).map((stat) => (
               <div key={stat.label} className="text-center">
                 <div className="text-lg font-black text-black">{stat.value}</div>
                 <div className="text-[9px] font-bold text-black/70">{stat.label}</div>
@@ -88,9 +96,9 @@ export default function ProfileScreen() {
       <section className="px-5 pb-6 animate-slideUp" style={{ animationDelay: '50ms' }}>
         <h2 className="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-3">Estadisticas</h2>
         <div className="grid grid-cols-4 gap-3">
-          {Object.entries(userData.stats).map(([label, value]) => (
+          {Object.entries(profileData.stats).map(([label, value]) => (
             <div key={label} className="bg-white/5 rounded-xl p-3 text-center">
-              <div className="text-xl font-black text-green-400">{value}</div>
+              <div className="text-xl font-black text-emerald-400">{value}</div>
               <div className="text-[10px] uppercase tracking-wider text-zinc-500 mt-0.5">{label}</div>
             </div>
           ))}

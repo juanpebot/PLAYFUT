@@ -1,4 +1,9 @@
-import { Share2, MapPin, Users, DollarSign } from 'lucide-react';
+import { Share2, MapPin, Users } from 'lucide-react';
+import { UserData } from '../components/RegisterScreen';
+
+interface Props {
+  userData?: UserData | null;
+}
 
 const matches = [
   {
@@ -36,23 +41,23 @@ const matches = [
   },
 ];
 
-const userCardData = {
-  name: 'Carlos Romero',
-  rating: 88,
-  position: 'DEL',
-  secondary: 'EXT',
-  avatar: 'CR',
-  stats: [
-    { label: 'VEL', value: 89 },
-    { label: 'TIR', value: 91 },
-    { label: 'PAS', value: 78 },
-    { label: 'REG', value: 85 },
-    { label: 'FIS', value: 82 },
-    { label: 'DEF', value: 45 },
-  ],
-};
-
-export default function HomeScreen() {
+export default function HomeScreen({ userData }: Props) {
+  const userCardData = {
+    name: userData?.username || 'Jugador',
+    rating: 75,
+    position: userData?.position || 'MED',
+    secondary: 'INT',
+    avatar: userData?.username ? userData.username.slice(0, 2).toUpperCase() : '??',
+    city: userData?.city || 'Madrid',
+    stats: [
+      { label: 'VEL', value: 75 },
+      { label: 'TIR', value: 72 },
+      { label: 'PAS', value: 70 },
+      { label: 'REG', value: 68 },
+      { label: 'FIS', value: 71 },
+      { label: 'DEF', value: 65 },
+    ],
+  };
   return (
     <div className="animate-fadeIn">
       {/* Header */}
