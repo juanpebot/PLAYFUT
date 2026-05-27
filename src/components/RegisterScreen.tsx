@@ -1,36 +1,37 @@
 import { useState } from 'react';
+import { useAuth } from '../hooks/useAuth';
+import { Position } from '../types/auth';
 
 interface Props {
-  onRegister: (userData: UserData) => void;
   onBack: () => void;
+  isLogin?: boolean;
 }
 
-export interface UserData {
-  username: string;
-  email: string;
-  city: string;
-  position: 'POR' | 'DEF' | 'MED' | 'DEL';
-}
-
-const positions = [
+const positions: { id: Position; label: string; color: string }[] = [
   { id: 'POR', label: 'Portero', color: '#f59e0b' },
   { id: 'DEF', label: 'Defensa', color: '#3b82f6' },
   { id: 'MED', label: 'Mediocampista', color: '#10b981' },
   { id: 'DEL', label: 'Delantero', color: '#ef4444' },
 ];
 
-export default function RegisterScreen({ onRegister, onBack }: Props) {
-  const [step, setStep] = useState(1);
+export default function RegisterScreen({ onBack, isLogin = false }: Props) {
+  const { register, login } = useAuth();
+  const [step, setStep] = useState(isLogin ? 3 : 1);
   const [formData, setFormData] = useState({
     username: '',
     email: '',
     password: '',
     confirmPassword: '',
     city: '',
-    position: '' as 'POR' | 'DEF' | 'MED' | 'DEL' | '',
+    position: '' as Position | '',
+  });
+  const [loginData, setLoginData] = useState({
+    email: '',
+    password: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loginError, setLoginError] = useState('');
 
   const validateStep1 = () => {
     const newErrors: Record<string, string> = {};
@@ -50,23 +51,49 @@ export default function RegisterScreen({ onRegister, onBack }: Props) {
     return Object.keys(newErrors).length === 0;
   };
 
+  const validateLogin = () => {
+    const newErrors: Record<string, string> = {};
+    if (!loginData.email.includes('@')) newErrors.loginEmail = 'Email inválido';
+    if (loginData.password.length < 1) newErrors.loginPassword = 'Contraseña requerida';
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleNext = () => {
     if (step === 1 && validateStep1()) {
       setStep(2);
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (step === 2 && validateStep2()) {
       setIsSubmitting(true);
-      setTimeout(() => {
-        onRegister({
+      setErrors({});
+      try {
+        await register({
           username: formData.username,
           email: formData.email,
+          password: formData.password,
           city: formData.city,
-          position: formData.position as 'POR' | 'DEF' | 'MED' | 'DEL',
+          position: formData.position as Position,
         });
-      }, 800);
+      } catch (error) {
+        setErrors({ submit: 'Error al registrarse. Intenta de nuevo.' });
+        setIsSubmitting(false);
+      }
+    }
+  };
+
+  const handleLogin = async () => {
+    if (validateLogin()) {
+      setIsSubmitting(true);
+      setLoginError('');
+      try {
+        await login(loginData.email, loginData.password);
+      } catch (error) {
+        setLoginError('Email o contraseña incorrectos');
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -77,6 +104,147 @@ export default function RegisterScreen({ onRegister, onBack }: Props) {
 
   const selectedPosition = positions.find((p) => p.id === formData.position);
 
+  // Login screen
+  if (step === 3 || isLogin) {
+    return (
+      <div className="min-h-screen bg-black relative overflow-hidden">
+        {/* Background */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url('https://images.pexels.com/photos/46798/the-ball-stadion-football-the-pitch-46798.jpeg?auto=compress&cs=tinysrgb&w=1920')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'blur(12px) brightness(0.2)',
+            transform: 'scale(1.1)',
+          }}
+        />
+
+        {/* Gradient overlay */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: 'linear-gradient(180deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.85) 100%)',
+          }}
+        />
+
+        {/* Content */}
+        <div className="relative z-10 min-h-screen px-6 py-12">
+          {/* Header */}
+          <button
+            onClick={onBack}
+            className="text-white text-sm flex items-center gap-2 mb-8"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Atrás
+          </button>
+
+          {/* Title */}
+          <div className="text-center mb-10">
+            <div className="flex justify-center mb-6">
+              <div
+                className="w-20 h-20 rounded-full flex items-center justify-center text-3xl font-bold"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(16,185,129,0.3), rgba(16,185,129,0.1))',
+                  border: '2px solid rgba(16,185,129,0.5)',
+                  color: '#10b981',
+                }}
+              >
+                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+              </div>
+            </div>
+            <h1 className="text-white text-3xl font-bold mb-2">Bienvenido de nuevo</h1>
+            <p className="text-slate-400 text-sm">Inicia sesión para continuar</p>
+          </div>
+
+          <div className="space-y-5 animate-fadeIn">
+            {/* Email */}
+            <div>
+              <label className="text-slate-400 text-xs uppercase tracking-wider block mb-2">
+                Email
+              </label>
+              <input
+                type="email"
+                value={loginData.email}
+                onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                className="w-full px-4 py-3.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:outline-none transition-all"
+                style={{ borderColor: errors.loginEmail ? '#ef4444' : 'rgba(255,255,255,0.1)' }}
+                placeholder="tu@email.com"
+                onFocus={(e) => e.target.style.borderColor = '#10b981'}
+                onBlur={(e) => e.target.style.borderColor = errors.loginEmail ? '#ef4444' : 'rgba(255,255,255,0.1)'}
+              />
+              {errors.loginEmail && <p className="text-red-400 text-xs mt-1">{errors.loginEmail}</p>}
+            </div>
+
+            {/* Password */}
+            <div>
+              <label className="text-slate-400 text-xs uppercase tracking-wider block mb-2">
+                Contraseña
+              </label>
+              <input
+                type="password"
+                value={loginData.password}
+                onChange={(e) => setLoginData({ ...loginData, password: e.target.value })}
+                className="w-full px-4 py-3.5 rounded-xl bg-white/5 border text-white placeholder-slate-500 focus:outline-none transition-all"
+                style={{ borderColor: errors.loginPassword ? '#ef4444' : 'rgba(255,255,255,0.1)' }}
+                placeholder="Tu contraseña"
+                onFocus={(e) => e.target.style.borderColor = '#10b981'}
+                onBlur={(e) => e.target.style.borderColor = errors.loginPassword ? '#ef4444' : 'rgba(255,255,255,0.1)'}
+              />
+              {errors.loginPassword && <p className="text-red-400 text-xs mt-1">{errors.loginPassword}</p>}
+            </div>
+
+            {/* Login error */}
+            {loginError && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 text-red-400 text-sm text-center">
+                {loginError}
+              </div>
+            )}
+
+            {/* Login button */}
+            <button
+              onClick={handleLogin}
+              disabled={isSubmitting}
+              className="w-full py-4 rounded-xl font-semibold text-sm tracking-wide mt-6 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
+              style={{
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                boxShadow: '0 4px 15px rgba(16,185,129,0.3)',
+              }}
+            >
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                  </svg>
+                  Entrando...
+                </span>
+              ) : (
+                'Entrar'
+              )}
+            </button>
+
+            {/* Switch to register */}
+            <p className="text-center text-slate-500 text-sm mt-6">
+              ¿No tienes cuenta?{' '}
+              <button
+                onClick={() => setStep(1)}
+                className="text-emerald-400 font-semibold hover:text-emerald-300 transition-colors"
+              >
+                Crear cuenta
+              </button>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Registration screens (steps 1 and 2)
   return (
     <div className="min-h-screen bg-black relative overflow-hidden">
       {/* Background */}
@@ -234,6 +402,17 @@ export default function RegisterScreen({ onRegister, onBack }: Props) {
             >
               Continuar
             </button>
+
+            {/* Switch to login */}
+            <p className="text-center text-slate-500 text-sm mt-6">
+              ¿Ya tienes cuenta?{' '}
+              <button
+                onClick={() => setStep(3)}
+                className="text-emerald-400 font-semibold hover:text-emerald-300 transition-colors"
+              >
+                Iniciar sesión
+              </button>
+            </p>
           </div>
         )}
 
@@ -291,7 +470,7 @@ export default function RegisterScreen({ onRegister, onBack }: Props) {
                   return (
                     <button
                       key={pos.id}
-                      onClick={() => setFormData({ ...formData, position: pos.id as any })}
+                      onClick={() => setFormData({ ...formData, position: pos.id })}
                       className="relative p-4 rounded-xl transition-all duration-300 group"
                       style={{
                         background: isSelected
@@ -354,7 +533,7 @@ export default function RegisterScreen({ onRegister, onBack }: Props) {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                   </svg>
-                  Preparando...
+                  Creando jugador...
                 </span>
               ) : (
                 'ENTRAR AL CAMPO'

@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Settings, Bell, Shield, LogOut, ChevronRight, Share2 } from 'lucide-react';
-import { UserData } from '../components/RegisterScreen';
+import { useAuth } from '../hooks/useAuth';
+import { User } from '../types/auth';
 
 interface Props {
-  userData?: UserData | null;
+  userData?: User | null;
 }
 
 const achievements = [
@@ -22,31 +23,38 @@ const menuItems = [
 ];
 
 export default function ProfileScreen({ userData }: Props) {
+  const { logout } = useAuth();
   const [notifications, setNotifications] = useState(true);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const profileData = {
     name: userData?.username || 'Jugador',
     email: userData?.email || 'jugador@email.com',
-    avatar: userData?.username ? userData.username.slice(0, 2).toUpperCase() : '??',
+    avatar: userData?.avatar || '??',
     position: userData?.position || 'MED',
     city: userData?.city || 'Madrid',
-    rating: 75,
-    level: 'BRONCE',
-    memberSince: 'Mayo 2026',
-    stats: {
+    rating: userData?.rating || 75,
+    level: userData?.level || 'BRONCE',
+    memberSince: userData?.memberSince || 'Mayo 2026',
+    stats: userData?.stats || {
       matches: 0,
       wins: 0,
       goals: 0,
       mvp: 0,
+      assists: 0,
     },
-    cardStats: [
-      { label: 'VEL', value: 75 },
-      { label: 'TIR', value: 72 },
-      { label: 'PAS', value: 70 },
-      { label: 'REG', value: 68 },
-      { label: 'FIS', value: 71 },
-      { label: 'DEF', value: 65 },
-    ],
+    cardStats: userData?.cardStats || {
+      VEL: 75,
+      TIR: 72,
+      PAS: 70,
+      REG: 68,
+      FIS: 71,
+      DEF: 65,
+    },
+  };
+
+  const handleLogout = () => {
+    logout();
   };
 
   return (
@@ -60,7 +68,7 @@ export default function ProfileScreen({ userData }: Props) {
           <div className="flex-1">
             <h1 className="text-xl font-black text-white">{profileData.name}</h1>
             <p className="text-xs text-zinc-500 mt-0.5">{profileData.email}</p>
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex items-center gap-2 mt-2 flex-wrap">
               <span className="bg-gradient-to-r from-amber-600 to-amber-700 text-black text-[10px] font-black px-2 py-0.5 rounded-md">
                 {profileData.level}
               </span>
@@ -73,16 +81,24 @@ export default function ProfileScreen({ userData }: Props) {
 
       {/* Mini Card */}
       <div className="px-5 py-4">
-        <div className="rounded-2xl overflow-hidden bg-gradient-to-br from-amber-600 via-amber-700 to-amber-900 p-4 flex items-center gap-4 animate-slideUp">
+        <div
+          className="rounded-2xl overflow-hidden p-4 flex items-center gap-4 animate-slideUp"
+          style={{
+            background: profileData.level === 'BRONCE' ? 'linear-gradient(to bottom right, #d97706, #92400e)' :
+                       profileData.level === 'PLATA' ? 'linear-gradient(to bottom right, #94a3b8, #475569)' :
+                       profileData.level === 'ORO' ? 'linear-gradient(to bottom right, #fbbf24, #f59e0b)' :
+                       'linear-gradient(to bottom right, #a855f7, #7c3aed)',
+          }}
+        >
           <div className="text-center">
             <div className="text-4xl font-black text-black">{profileData.rating}</div>
             <div className="text-[10px] font-bold text-black/70">OVR</div>
           </div>
           <div className="flex-1 grid grid-cols-3 gap-3">
-            {profileData.cardStats.slice(0, 6).map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="text-lg font-black text-black">{stat.value}</div>
-                <div className="text-[9px] font-bold text-black/70">{stat.label}</div>
+            {Object.entries(profileData.cardStats).slice(0, 6).map(([label, value]) => (
+              <div key={label} className="text-center">
+                <div className="text-lg font-black text-black">{value}</div>
+                <div className="text-[9px] font-bold text-black/70">{label}</div>
               </div>
             ))}
           </div>
@@ -95,7 +111,7 @@ export default function ProfileScreen({ userData }: Props) {
       {/* Stats */}
       <section className="px-5 pb-6 animate-slideUp" style={{ animationDelay: '50ms' }}>
         <h2 className="text-xs uppercase tracking-[0.25em] text-zinc-500 mb-3">Estadisticas</h2>
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-5 gap-3">
           {Object.entries(profileData.stats).map(([label, value]) => (
             <div key={label} className="bg-white/5 rounded-xl p-3 text-center">
               <div className="text-xl font-black text-emerald-400">{value}</div>
@@ -109,7 +125,7 @@ export default function ProfileScreen({ userData }: Props) {
       <section className="px-5 pb-6 animate-slideUp" style={{ animationDelay: '100ms' }}>
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-xs uppercase tracking-[0.25em] text-zinc-500">Logros</h2>
-          <span className="text-green-400 text-xs font-bold">
+          <span className="text-emerald-400 text-xs font-bold">
             {achievements.filter(a => a.unlocked).length}/{achievements.length}
           </span>
         </div>
@@ -142,7 +158,7 @@ export default function ProfileScreen({ userData }: Props) {
               }`}
             >
               <div className="w-10 h-10 rounded-xl bg-zinc-800 flex items-center justify-center">
-                <item.icon size={18} color="#22c55e" />
+                <item.icon size={18} color="#10b981" />
               </div>
               <div className="flex-1">
                 <p className="text-white font-bold text-sm">{item.label}</p>
@@ -152,7 +168,7 @@ export default function ProfileScreen({ userData }: Props) {
                 <button
                   onClick={() => setNotifications(!notifications)}
                   className={`w-12 h-7 rounded-full transition-all duration-200 relative ${
-                    notifications ? 'bg-green-500' : 'bg-zinc-700'
+                    notifications ? 'bg-emerald-500' : 'bg-zinc-700'
                   }`}
                 >
                   <div
@@ -170,7 +186,10 @@ export default function ProfileScreen({ userData }: Props) {
         </div>
 
         {/* Logout */}
-        <button className="w-full mt-4 flex items-center justify-center gap-2 py-3 rounded-xl border border-red-500/30 text-red-500 hover:bg-red-500/10 transition-colors">
+        <button
+          onClick={() => setShowLogoutConfirm(true)}
+          className="w-full mt-4 flex items-center justify-center gap-2 py-3 rounded-xl border border-red-500/30 text-red-500 hover:bg-red-500/10 transition-colors"
+        >
           <LogOut size={18} />
           <span className="font-bold text-sm">Cerrar Sesion</span>
         </button>
@@ -178,8 +197,65 @@ export default function ProfileScreen({ userData }: Props) {
 
       {/* Footer */}
       <div className="px-5 pb-6 text-center">
-        <p className="text-zinc-700 text-xs">Futmatch Pro v1.0.0</p>
+        <p className="text-zinc-700 text-xs">PlayFUT v1.0.0</p>
       </div>
+
+      {/* Logout confirmation modal */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 px-6">
+          <div
+            className="w-full max-w-sm rounded-2xl overflow-hidden animate-fadeIn"
+            style={{
+              background: 'linear-gradient(to bottom, #1f2937, #111827)',
+              border: '1px solid rgba(255,255,255,0.1)',
+            }}
+          >
+            <div className="p-8 text-center">
+              <div className="w-16 h-16 rounded-full bg-red-500/10 flex items-center justify-center mx-auto mb-4">
+                <LogOut size={32} color="#ef4444" />
+              </div>
+              <h3 className="text-white text-xl font-bold mb-2">Cerrar Sesion</h3>
+              <p className="text-slate-400 text-sm mb-8">
+                ¿Estas seguro de que quieres cerrar sesion? Tendras que volver a iniciar sesion.
+              </p>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all duration-300"
+                  style={{
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    color: '#fff',
+                  }}
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="flex-1 py-3 rounded-xl font-semibold text-sm transition-all duration-300"
+                  style={{
+                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                    color: '#fff',
+                  }}
+                >
+                  Cerrar Sesion
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fadeIn {
+          animation: fadeIn 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 }

@@ -1,8 +1,8 @@
 import { Share2, MapPin, Users } from 'lucide-react';
-import { UserData } from '../components/RegisterScreen';
+import { User } from '../types/auth';
 
 interface Props {
-  userData?: UserData | null;
+  userData?: User | null;
 }
 
 const matches = [
@@ -44,12 +44,19 @@ const matches = [
 export default function HomeScreen({ userData }: Props) {
   const userCardData = {
     name: userData?.username || 'Jugador',
-    rating: 75,
+    rating: userData?.rating || 75,
     position: userData?.position || 'MED',
-    secondary: 'INT',
-    avatar: userData?.username ? userData.username.slice(0, 2).toUpperCase() : '??',
+    level: userData?.level || 'BRONCE',
+    avatar: userData?.avatar || '??',
     city: userData?.city || 'Madrid',
-    stats: [
+    stats: userData?.cardStats ? [
+      { label: 'VEL', value: userData.cardStats.VEL },
+      { label: 'TIR', value: userData.cardStats.TIR },
+      { label: 'PAS', value: userData.cardStats.PAS },
+      { label: 'REG', value: userData.cardStats.REG },
+      { label: 'FIS', value: userData.cardStats.FIS },
+      { label: 'DEF', value: userData.cardStats.DEF },
+    ] : [
       { label: 'VEL', value: 75 },
       { label: 'TIR', value: 72 },
       { label: 'PAS', value: 70 },
@@ -105,7 +112,7 @@ export default function HomeScreen({ userData }: Props) {
                       {userCardData.position}
                     </div>
                     <div className="bg-black/20 rounded px-2 py-1 text-xs font-black w-fit text-black">
-                      {userCardData.secondary}
+                      {userCardData.level}
                     </div>
                   </div>
                 </div>
