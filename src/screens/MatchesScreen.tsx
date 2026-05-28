@@ -1,110 +1,58 @@
 import { useState } from 'react';
-import { MapPin, Users, Clock, ChevronDown, Filter } from 'lucide-react';
+import { MapPin, Users, Clock } from 'lucide-react';
+import { Match, MatchLevel, MatchFormat, createInitialMatches } from '../types/match';
+import MatchModal from '../components/MatchModal';
+import { useAuth } from '../hooks/useAuth';
 
-type FilterType = 'all' | 'today' | 'week' | 'level';
+type FilterType = 'all' | 'today' | 'week';
 
-const allMatches = [
-  {
-    id: 1,
-    title: 'Futbol 7 - Vallecas',
-    time: 'Hoy - 19:00',
-    date: new Date(),
-    level: 'Medio',
-    price: '6 EUR',
-    players: '11/14',
-    format: 'F7',
-    location: 'Polideportivo Vallecas',
-    spots: 3,
-    organizer: 'Mario G.',
-    distance: '2.3 km',
-  },
-  {
-    id: 2,
-    title: 'Futsal - Madrid Rio',
-    time: 'Manana - 20:30',
-    date: new Date(Date.now() + 86400000),
-    level: 'Alto',
-    price: '8 EUR',
-    players: '9/10',
-    format: 'FS',
-    location: 'Centro Deportivo Madrid Rio',
-    spots: 1,
-    organizer: 'Laura P.',
-    distance: '4.1 km',
-  },
-  {
-    id: 3,
-    title: 'Futbol 11 - Canillejas',
-    time: 'Sabado - 10:00',
-    date: new Date(Date.now() + 172800000),
-    level: 'Principiante',
-    price: '5 EUR',
-    players: '18/22',
-    format: 'F11',
-    location: 'Ciudad Deportiva Canillejas',
-    spots: 4,
-    organizer: 'Pedro R.',
-    distance: '6.7 km',
-  },
-  {
-    id: 4,
-    title: 'Futbol 7 - Moratalaz',
-    time: 'Domingo - 11:00',
-    date: new Date(Date.now() + 259200000),
-    level: 'Medio',
-    price: '6 EUR',
-    players: '12/14',
-    format: 'F7',
-    location: 'Centro Deportivo Moratalaz',
-    spots: 2,
-    organizer: 'Ana M.',
-    distance: '3.5 km',
-  },
-  {
-    id: 5,
-    title: 'Futsal Indoor - Valdebebas',
-    time: 'Lunes - 21:00',
-    date: new Date(Date.now() + 345600000),
-    level: 'Alto',
-    price: '10 EUR',
-    players: '8/10',
-    format: 'FS',
-    location: 'Pabellon Valdebebas',
-    spots: 2,
-    organizer: 'Carlos T.',
-    distance: '8.2 km',
-  },
-];
-
-const levelColors: Record<string, string> = {
+const levelColors: Record<MatchLevel, string> = {
   Principiante: 'bg-blue-500 text-white',
   Medio: 'bg-yellow-500 text-black',
   Alto: 'bg-red-500 text-white',
+  Elite: 'bg-gradient-to-r from-purple-500 to-pink-500 text-white',
+};
+
+const formatLabels: Record<MatchFormat, string> = {
+  FS: 'Futbol Sala',
+  F7: 'Futbol 7',
+  F11: 'Futbol 11',
 };
 
 export default function MatchesScreen() {
+  const { user } = useAuth();
   const [filter, setFilter] = useState<FilterType>('all');
-  const [showFilters, setShowFilters] = useState(false);
+  const [matches, setMatches] = useState<Match[]>(createInitialMatches());
+  const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
 
-  const filteredMatches = allMatches.filter(match => {
+  const filteredMatches = matches.filter((match) => {
+    const matchDate = new Date(match.date);
+    const today = new Date();
+
     if (filter === 'today') {
-      const today = new Date();
-      return match.date.toDateString() === today.toDateString();
+      return matchDate.toDateString() === today.toDateString();
     }
     if (filter === 'week') {
       const weekFromNow = new Date(Date.now() + 7 * 86400000);
-      return match.date <= weekFromNow;
+      return matchDate <= weekFromNow;
     }
     return true;
   });
+
+  const handleMatchClick = (match: Match) => {
+    setSelectedMatch(match);
+  };
+
+  const handleUpdateMatch = (updatedMatch: Match) => {
+    setMatches(matches.map((m) => (m.id === updatedMatch.id ? updatedMatch : m)));
+    setSelectedMatch(updatedMatch);
+  };
 
   return (
     <div className="animate-fadeIn">
       {/* Header */}
       <header className="px-6 pt-8 pb-5 border-b border-white/10 bg-gradient-to-b from-zinc-900 to-zinc-950">
-        <h1 className="text-2xl font-black tracking-wider text-white">
-          Partidos
-        </h1>
+        <h1 className="text-2xl font-black tracking-wider text-white">Partidos</h1>
         <p className="text-xs tracking-[0.25em] text-zinc-500 uppercase mt-1">
           Encuentra tu proximo partido
         </p>
@@ -123,7 +71,7 @@ export default function MatchesScreen() {
               onClick={() => setFilter(id)}
               className={`px-4 py-2 rounded-xl text-xs font-bold uppercase tracking-wider whitespace-nowrap transition-all duration-200 ${
                 filter === id
-                  ? 'bg-green-500 text-black'
+                  ? 'bg-emerald-500 text-black'
                   : 'bg-white/5 text-zinc-400 border border-white/10'
               }`}
             >
@@ -138,80 +86,92 @@ export default function MatchesScreen() {
         {filteredMatches.length === 0 ? (
           <div className="text-center py-12">
             <p className="text-zinc-500 mb-4">No hay partidos disponibles</p>
-            <button className="bg-green-500 hover:bg-green-400 transition text-black px-6 py-3 rounded-xl font-bold">
+            <button className="bg-emerald-500 hover:bg-emerald-400 transition text-black px-6 py-3 rounded-xl font-bold">
               Crear Partido
             </button>
           </div>
         ) : (
-          filteredMatches.map((match, idx) => (
-            <div
-              key={match.id}
-              className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:border-green-500/30 transition-all duration-200 animate-slideUp"
-              style={{ animationDelay: `${idx * 50}ms` }}
-            >
-              {/* Match Header */}
-              <div className="p-4 border-b border-white/5">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="bg-green-500 text-black text-[10px] font-black px-2 py-1 rounded-md tracking-widest">
-                        {match.format}
-                      </span>
-                      <span className={`text-[10px] font-bold px-2 py-1 rounded-md ${levelColors[match.level]}`}>
-                        {match.level}
-                      </span>
+          filteredMatches.map((match, idx) => {
+            const spotsLeft = match.maxPlayers - match.currentPlayers;
+            const userInMatch = match.slots.some((s) => s.player?.id === user?.id);
+
+            return (
+              <button
+                key={match.id}
+                onClick={() => handleMatchClick(match)}
+                className="w-full text-left bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:border-emerald-500/30 active:scale-[0.98] transition-all duration-200"
+                style={{ animationDelay: `${idx * 50}ms` }}
+              >
+                {/* Match Header */}
+                <div className="p-4 border-b border-white/5">
+                  <div className="flex justify-between items-start gap-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap mb-2">
+                        <span className="bg-emerald-500 text-black text-[10px] font-black px-2 py-1 rounded-md tracking-widest">
+                          {match.format}
+                        </span>
+                        <span className={`text-[10px] font-bold px-2 py-1 rounded-md ${levelColors[match.level]}`}>
+                          {match.level}
+                        </span>
+                        {userInMatch && (
+                          <span className="text-[10px] font-bold px-2 py-1 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+                            Apuntado
+                          </span>
+                        )}
+                      </div>
+                      <h3 className="font-black text-lg text-white">{match.title}</h3>
                     </div>
-                    <h3 className="font-black text-lg text-white">
-                      {match.title}
-                    </h3>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-green-400 font-black text-lg">
-                      {match.price}
-                    </span>
-                    <p className="text-zinc-500 text-[10px] mt-1">{match.distance}</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Match Details */}
-              <div className="p-4 space-y-3">
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2 text-zinc-400">
-                    <MapPin size={14} />
-                    <span>{match.location}</span>
+                    <div className="text-right flex-shrink-0">
+                      <span className="text-emerald-400 font-black text-lg">{match.price}€</span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2 text-zinc-400">
-                    <Clock size={14} />
-                    <span>{match.time}</span>
+                {/* Match Details */}
+                <div className="p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-sm text-zinc-400">
+                    <MapPin size={14} className="text-emerald-400 flex-shrink-0" />
+                    <span className="truncate">{match.location}</span>
                   </div>
-                  <div className="flex items-center gap-2 text-zinc-400">
-                    <Users size={14} />
-                    <span>{match.players}</span>
+
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-sm text-zinc-400">
+                      <Clock size={14} className="text-emerald-400" />
+                      <span>{match.time}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm text-zinc-400">
+                      <Users size={14} className="text-emerald-400" />
+                      <span>{match.currentPlayers}/{match.maxPlayers}</span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-2 border-t border-white/5">
+                    <div className="text-xs text-slate-500">{formatLabels[match.format]}</div>
+                    <div className="text-xs">
+                      <span className="text-emerald-400 font-bold">{spotsLeft}</span>
+                      <span className="text-zinc-500"> plazas libres</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 flex items-center justify-center gap-2 text-emerald-400 text-xs font-bold">
+                    <span>Ver campo y unirse</span>
+                    <span>→</span>
                   </div>
                 </div>
-
-                <div className="flex items-center justify-between pt-2 border-t border-white/5">
-                  <div className="text-xs text-zinc-500">
-                    Organiza: <span className="text-white">{match.organizer}</span>
-                  </div>
-                  <div className="text-xs">
-                    <span className="text-green-400 font-bold">{match.spots}</span>
-                    <span className="text-zinc-500"> plazas</span>
-                  </div>
-                </div>
-
-                <button className="w-full bg-green-500 hover:bg-green-400 active:scale-[0.98] transition-all duration-200 text-black py-3 rounded-xl font-black text-sm tracking-wider mt-2">
-                  UNIRSE AL PARTIDO
-                </button>
-              </div>
-            </div>
-          ))
+              </button>
+            );
+          })
         )}
       </div>
+
+      {/* Match Modal */}
+      {selectedMatch && (
+        <MatchModal
+          match={selectedMatch}
+          onClose={() => setSelectedMatch(null)}
+          onUpdate={handleUpdateMatch}
+        />
+      )}
     </div>
   );
 }
